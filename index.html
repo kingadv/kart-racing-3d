@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏎️ Kart Racing 3D</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            overflow: hidden; 
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #000;
+        }
+        #game-container { position: relative; width: 100vw; height: 100vh; }
+        canvas { display: block; }
+        
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 100;
+        }
+        
+        #speedometer {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.9) 100%);
+            border-radius: 50%;
+            border: 4px solid #ff6b00;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        
+        #speed-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #00ff88;
+            text-shadow: 0 0 10px #00ff88;
+        }
+        
+        #speed-unit { font-size: 14px; color: #aaa; }
+        
+        #lap-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #ff6b00, #ff3366);
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            z-index: 100;
+        }
+        
+        #minimap {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            width: 180px;
+            height: 180px;
+            background: rgba(0,0,0,0.7);
+            border: 3px solid #444;
+            border-radius: 10px;
+            z-index: 100;
+        }
+        
+        #controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 10px 20px;
+            border-radius: 20px;
+            color: #aaa;
+            font-size: 14px;
+            z-index: 100;
+        }
+        
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+        
+        #start-screen h1 {
+            font-size: 72px;
+            color: #fff;
+            text-shadow: 0 0 20px #ff6b00, 0 0 40px #ff3366;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        #start-screen p {
+            font-size: 24px;
+            color: #aaa;
+            margin-bottom: 40px;
+        }
+        
+        #start-btn {
+            padding: 20px 60px;
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #ff6b00, #ff3366);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 30px rgba(255,107,0,0.4);
+        }
+        
+        #start-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(255,107,0,0.6);
+        }
+        
+        .boost-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+            opacity: 0;
+            z-index: 150;
+            pointer-events: none;
+        }
+        
+        #nitro-bar {
+            position: absolute;
+            bottom: 200px;
+            right: 50px;
+            width: 30px;
+            height: 150px;
+            background: rgba(0,0,0,0.7);
+            border: 2px solid #00ffff;
+            border-radius: 15px;
+            overflow: hidden;
+            z-index: 100;
+        }
+        
+        #nitro-fill {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, #00ffff, #ff00ff);
+            transition: height 0.1s;
+        }
+        
+        #position-display {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="start-screen">
+            <h1>🏎️ KART RACING 3D</h1>
+            <p>Estilo Mario Kart com física realista!</p>
+            <button id="start-btn">🏁 COMEÇAR</button>
+            <p style="margin-top: 30px; font-size: 16px; color: #666;">
+                ↑↓ Acelerar/Frear | ←→ Virar | SPACE Nitro | R Reiniciar
+            </p>
+        </div>
+        
+        <div id="hud">
+            <div>⏱️ Tempo: <span id="time">0:00.00</span></div>
+            <div>🏆 Melhor: <span id="best-time">--:--</span></div>
+        </div>
+        
+        <div id="lap-display">🏁 Volta: <span id="lap">1</span>/3</div>
+        
+        <div id="position-display">1º</div>
+        
+        <div id="speedometer">
+            <span id="speed-value">0</span>
+            <span id="speed-unit">km/h</span>
+        </div>
+        
+        <div id="nitro-bar">
+            <div id="nitro-fill"></div>
+        </div>
+        
+        <canvas id="minimap"></canvas>
+        
+        <div id="controls-hint">↑↓ Acelerar/Frear | ←→ Virar | SPACE Nitro</div>
+        
+        <div class="boost-indicator" id="boost-text">BOOST!</div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // ============================================
+        // KART RACING 3D - Physics-based Racing Game
+        // ============================================
+        
+        let scene, camera, renderer;
+        let kart, wheels = [];
+        let opponents = [];
+        let track, trackPath;
+        let gameStarted = false;
+        let raceTime = 0;
+        let bestTime = null;
+        let currentLap = 1;
+        let lastCheckpoint = 0;
+        let nitro = 100;
+        let isUsingNitro = false;
+        
+        // Physics variables
+        const physics = {
+            position: new THREE.Vector3(0, 0.5, 0),
+            velocity: new THREE.Vector3(0, 0, 0),
+            rotation: 0,
+            angularVelocity: 0,
+            speed: 0,
+            acceleration: 0,
+            steering: 0,
+            drifting: false,
+            driftAngle: 0,
+            onGround: true,
+            suspensionCompression: [0, 0, 0, 0]
+        };
+        
+        // Physics constants (realistic values)
+        const PHYSICS = {
+            MAX_SPEED: 180,           // km/h
+            ACCELERATION: 45,         // km/h per second
+            BRAKE_FORCE: 80,          // km/h per second
+            DRAG: 0.98,               // Air resistance
+            ROLLING_RESISTANCE: 0.995,
+            TURN_SPEED: 2.5,          // Radians per second at low speed
+            TURN_SPEED_FACTOR: 0.4,   // How much speed affects turning
+            DRIFT_THRESHOLD: 0.7,     // Speed ratio to start drifting
+            DRIFT_FACTOR: 0.85,       // How much grip during drift
+            GRIP: 0.95,               // Tire grip
+            GRAVITY: 30,              // m/s²
+            SUSPENSION_STIFFNESS: 50,
+            SUSPENSION_DAMPING: 5,
+            MASS: 150,                // kg
+            NITRO_BOOST: 1.5,
+            NITRO_CONSUMPTION: 30,    // per second
+            NITRO_RECHARGE: 10        // per second
+        };
+        
+        // Track checkpoints for lap counting
+        const checkpoints = [];
+        
+        // Input state
+        const keys = {
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+            space: false
+        };
+        
+        // Initialize the game
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.fog = new THREE.Fog(0x87ceeb, 100, 500);
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('game-container').insertBefore(renderer.domElement, document.getElementById('start-screen'));
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const sunLight = new THREE.DirectionalLight(0xffffff, 1);
+            sunLight.position.set(100, 150, 100);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 2048;
+            sunLight.shadow.mapSize.height = 2048;
+            sunLight.shadow.camera.near = 10;
+            sunLight.shadow.camera.far = 400;
+            sunLight.shadow.camera.left = -150;
+            sunLight.shadow.camera.right = 150;
+            sunLight.shadow.camera.top = 150;
+            sunLight.shadow.camera.bottom = -150;
+            scene.add(sunLight);
+            
+            // Sky
+            createSky();
+            
+            // Track
+            createTrack();
+            
+            // Kart
+            createKart();
+            
+            // Opponents
+            createOpponents();
+            
+            // Environment
+            createEnvironment();
+            
+            // Events
+            setupEvents();
+            
+            // Start animation loop
+            animate();
+        }
+        
+        function createSky() {
+            const skyGeo = new THREE.SphereGeometry(400, 32, 32);
+            const skyMat = new THREE.ShaderMaterial({
+                uniforms: {
+                    topColor: { value: new THREE.Color(0x0077ff) },
+                    bottomColor: { value: new THREE.Color(0x87ceeb) },
+                    offset: { value: 20 },
+                    exponent: { value: 0.6 }
+                },
+                vertexShader: `
+                    varying vec3 vWorldPosition;
+                    void main() {
+                        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                        vWorldPosition = worldPosition.xyz;
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `,
+                fragmentShader: `
+                    uniform vec3 topColor;
+                    uniform vec3 bottomColor;
+                    uniform float offset;
+                    uniform float exponent;
+                    varying vec3 vWorldPosition;
+                    void main() {
+                        float h = normalize(vWorldPosition + offset).y;
+                        gl_FragColor = vec4(mix(bottomColor, topColor, max(pow(max(h, 0.0), exponent), 0.0)), 1.0);
+                    }
+                `,
+                side: THREE.BackSide
+            });
+            const sky = new THREE.Mesh(skyGeo, skyMat);
+            scene.add(sky);
+        }
+        
+        function createTrack() {
+            // Create a Mario Kart style track with curves
+            const trackPoints = [
+                new THREE.Vector3(0, 0, 0),
+                new THREE.Vector3(40, 0, 0),
+                new THREE.Vector3(70, 0, -30),
+                new THREE.Vector3(80, 0, -70),
+                new THREE.Vector3(70, 0, -100),
+                new THREE.Vector3(40, 0, -120),
+                new THREE.Vector3(0, 0, -130),
+                new THREE.Vector3(-50, 0, -120),
+                new THREE.Vector3(-80, 0, -90),
+                new THREE.Vector3(-90, 0, -50),
+                new THREE.Vector3(-80, 0, -10),
+                new THREE.Vector3(-50, 0, 20),
+                new THREE.Vector3(-20, 0, 30),
+                new THREE.Vector3(0, 0, 20),
+            ];
+            
+            trackPath = new THREE.CatmullRomCurve3(trackPoints, true);
+            
+            // Track surface
+            const trackWidth = 18;
+            const trackSegments = 200;
+            const trackShape = new THREE.Shape();
+            trackShape.moveTo(-trackWidth/2, 0);
+            trackShape.lineTo(trackWidth/2, 0);
+            
+            const extrudeSettings = {
+                steps: trackSegments,
+                bevelEnabled: false,
+                extrudePath: trackPath
+            };
+            
+            // Main track
+            const trackGeo = new THREE.TubeGeometry(trackPath, trackSegments, trackWidth/2, 8, true);
+            const trackMat = new THREE.MeshStandardMaterial({ 
+                color: 0x333333,
+                roughness: 0.8
+            });
+            track = new THREE.Mesh(trackGeo, trackMat);
+            track.rotation.x = Math.PI / 2;
+            track.position.y = -0.1;
+            track.receiveShadow = true;
+            scene.add(track);
+            
+            // Track markings (racing stripes)
+            createTrackMarkings(trackPath, trackSegments);
+            
+            // Track borders (curbs)
+            createTrackBorders(trackPath, trackSegments, trackWidth);
+            
+            // Checkpoints
+            createCheckpoints(trackPath);
+            
+            // Ground plane
+            const groundGeo = new THREE.PlaneGeometry(500, 500);
+            const groundMat = new THREE.MeshStandardMaterial({ 
+                color: 0x228B22,
+                roughness: 1
+            });
+            const ground = new THREE.Mesh(groundGeo, groundMat);
+            ground.rotation.x = -Math.PI / 2;
+            ground.position.y = -0.2;
+            ground.receiveShadow = true;
+            scene.add(ground);
+        }
+        
+        function createTrackMarkings(path, segments) {
+            // Center line (dashed)
+            const centerPoints = path.getPoints(segments);
+            const centerGeo = new THREE.BufferGeometry().setFromPoints(centerPoints);
+            const centerMat = new THREE.LineDashedMaterial({ 
+                color: 0xffff00, 
+                dashSize: 3, 
+                gapSize: 2,
+                linewidth: 2
+            });
+            const centerLine = new THREE.Line(centerGeo, centerMat);
+            centerLine.computeLineDistances();
+            centerLine.position.y = 0.05;
+            scene.add(centerLine);
+            
+            // Start/finish line
+            const startGeo = new THREE.PlaneGeometry(18, 3);
+            const startCanvas = document.createElement('canvas');
+            startCanvas.width = 256;
+            startCanvas.height = 64;
+            const ctx = startCanvas.getContext('2d');
+            for (let i = 0; i < 16; i++) {
+                for (let j = 0; j < 4; j++) {
+                    ctx.fillStyle = (i + j) % 2 === 0 ? '#fff' : '#000';
+                    ctx.fillRect(i * 16, j * 16, 16, 16);
+                }
+            }
+            const startTex = new THREE.CanvasTexture(startCanvas);
+            const startMat = new THREE.MeshBasicMaterial({ map: startTex });
+            const startLine = new THREE.Mesh(startGeo, startMat);
+            startLine.rotation.x = -Math.PI / 2;
+            startLine.position.set(0, 0.02, 0);
+            scene.add(startLine);
+        }
+        
+        function createTrackBorders(path, segments, width) {
+            const curvePoints = path.getPoints(segments);
+            const tangents = [];
+            
+            for (let i = 0; i < curvePoints.length; i++) {
+                const t = i / (curvePoints.length - 1);
+                tangents.push(path.getTangentAt(t));
+            }
+            
+            // Red and white curbs
+            const colors = [0xff0000, 0xffffff];
+            
+            [-1, 1].forEach(side => {
+                const curbPoints = curvePoints.map((p, i) => {
+                    const normal = new THREE.Vector3(-tangents[i].z, 0, tangents[i].x).normalize();
+                    return new THREE.Vector3(
+                        p.x + normal.x * (width/2 + 0.5) * side,
+                        0.1,
+                        p.z + normal.z * (width/2 + 0.5) * side
+                    );
+                });
+                
+                const curbGeo = new THREE.BufferGeometry();
+                const vertices = [];
+                const colorArray = [];
+                
+                for (let i = 0; i < curbPoints.length - 1; i++) {
+                    const color = colors[i % 2 === 0 ? 0 : 1];
+                    const c = new THREE.Color(color);
+                    
+                    vertices.push(
+                        curbPoints[i].x, curbPoints[i].y, curbPoints[i].z,
+                        curbPoints[i + 1].x, curbPoints[i + 1].y, curbPoints[i + 1].z,
+                        curbPoints[i].x, curbPoints[i].y + 0.3, curbPoints[i].z,
+                        
+                        curbPoints[i + 1].x, curbPoints[i + 1].y, curbPoints[i + 1].z,
+                        curbPoints[i + 1].x, curbPoints[i + 1].y + 0.3, curbPoints[i + 1].z,
+                        curbPoints[i].x, curbPoints[i].y + 0.3, curbPoints[i].z
+                    );
+                    
+                    for (let j = 0; j < 6; j++) {
+                        colorArray.push(c.r, c.g, c.b);
+                    }
+                }
+                
+                curbGeo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                curbGeo.setAttribute('color', new THREE.Float32BufferAttribute(colorArray, 3));
+                curbGeo.computeVertexNormals();
+                
+                const curbMat = new THREE.MeshBasicMaterial({ vertexColors: true });
+                const curb = new THREE.Mesh(curbGeo, curbMat);
+                scene.add(curb);
+            });
+        }
+        
+        function createCheckpoints(path) {
+            const numCheckpoints = 10;
+            for (let i = 0; i < numCheckpoints; i++) {
+                const t = i / numCheckpoints;
+                const point = path.getPointAt(t);
+                checkpoints.push({
+                    position: point,
+                    t: t,
+                    passed: false
+                });
+            }
+        }
+        
+        function createKart() {
+            kart = new THREE.Group();
+            
+            // Main body
+            const bodyGeo = new THREE.BoxGeometry(1.5, 0.5, 2.5);
+            const bodyMat = new THREE.MeshStandardMaterial({ 
+                color: 0xff0000,
+                metalness: 0.6,
+                roughness: 0.4
+            });
+            const body = new THREE.Mesh(bodyGeo, bodyMat);
+            body.position.y = 0.4;
+            body.castShadow = true;
+            kart.add(body);
+            
+            // Cockpit
+            const cockpitGeo = new THREE.BoxGeometry(1.2, 0.4, 1.2);
+            const cockpitMat = new THREE.MeshStandardMaterial({ 
+                color: 0x222222,
+                metalness: 0.3,
+                roughness: 0.6
+            });
+            const cockpit = new THREE.Mesh(cockpitGeo, cockpitMat);
+            cockpit.position.set(0, 0.7, -0.3);
+            cockpit.castShadow = true;
+            kart.add(cockpit);
+            
+            // Driver (simple character)
+            const driverGroup = new THREE.Group();
+            
+            // Head
+            const headGeo = new THREE.SphereGeometry(0.25, 16, 16);
+            const headMat = new THREE.MeshStandardMaterial({ color: 0xffcc99 });
+            const head = new THREE.Mesh(headGeo, headMat);
+            head.position.y = 1.1;
+            head.castShadow = true;
+            driverGroup.add(head);
+            
+            // Helmet
+            const helmetGeo = new THREE.SphereGeometry(0.28, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+            const helmetMat = new THREE.MeshStandardMaterial({ 
+                color: 0xff0000,
+                metalness: 0.5,
+                roughness: 0.3
+            });
+            const helmet = new THREE.Mesh(helmetGeo, helmetMat);
+            helmet.position.y = 1.15;
+            helmet.castShadow = true;
+            driverGroup.add(helmet);
+            
+            // Visor
+            const visorGeo = new THREE.BoxGeometry(0.4, 0.15, 0.1);
+            const visorMat = new THREE.MeshStandardMaterial({ 
+                color: 0x000033,
+                metalness: 0.9,
+                roughness: 0.1
+            });
+            const visor = new THREE.Mesh(visorGeo, visorMat);
+            visor.position.set(0, 1.05, 0.2);
+            driverGroup.add(visor);
+            
+            // Body
+            const torsoGeo = new THREE.CylinderGeometry(0.2, 0.25, 0.4, 8);
+            const torsoMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+            const torso = new THREE.Mesh(torsoGeo, torsoMat);
+            torso.position.y = 0.75;
+            torso.castShadow = true;
+            driverGroup.add(torso);
+            
+            driverGroup.position.z = -0.3;
+            kart.add(driverGroup);
+            
+            // Wheels
+            const wheelGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16);
+            const wheelMat = new THREE.MeshStandardMaterial({ 
+                color: 0x111111,
+                roughness: 0.9
+            });
+            
+            const wheelPositions = [
+                { x: -0.8, y: 0.3, z: 0.8 },   // Front left
+                { x: 0.8, y: 0.3, z: 0.8 },    // Front right
+                { x: -0.8, y: 0.3, z: -0.8 },  // Rear left
+                { x: 0.8, y: 0.3, z: -0.8 }    // Rear right
+            ];
+            
+            wheelPositions.forEach((pos, i) => {
+                const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+                wheel.rotation.z = Math.PI / 2;
+                wheel.position.set(pos.x, pos.y, pos.z);
+                wheel.castShadow = true;
+                
+                // Wheel rim
+                const rimGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.22, 8);
+                const rimMat = new THREE.MeshStandardMaterial({ 
+                    color: 0xcccccc,
+                    metalness: 0.8,
+                    roughness: 0.2
+                });
+                const rim = new THREE.Mesh(rimGeo, rimMat);
+                wheel.add(rim);
+                
+                wheels.push(wheel);
+                kart.add(wheel);
+            });
+            
+            // Exhaust pipes
+            [-0.4, 0.4].forEach(x => {
+                const exhaustGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.4, 8);
+                const exhaustMat = new THREE.MeshStandardMaterial({ 
+                    color: 0x888888,
+                    metalness: 0.8,
+                    roughness: 0.3
+                });
+                const exhaust = new THREE.Mesh(exhaustGeo, exhaustMat);
+                exhaust.rotation.x = Math.PI / 2;
+                exhaust.position.set(x, 0.35, -1.4);
+                kart.add(exhaust);
+            });
+            
+            // Spoiler
+            const spoilerGeo = new THREE.BoxGeometry(1.6, 0.1, 0.3);
+            const spoilerMat = new THREE.MeshStandardMaterial({ 
+                color: 0xff0000,
+                metalness: 0.5
+            });
+            const spoiler = new THREE.Mesh(spoilerGeo, spoilerMat);
+            spoiler.position.set(0, 0.9, -1.2);
+            kart.add(spoiler);
+            
+            // Spoiler supports
+            [-0.6, 0.6].forEach(x => {
+                const supportGeo = new THREE.BoxGeometry(0.08, 0.3, 0.08);
+                const support = new THREE.Mesh(supportGeo, spoilerMat);
+                support.position.set(x, 0.75, -1.2);
+                kart.add(support);
+            });
+            
+            kart.position.copy(physics.position);
+            scene.add(kart);
+        }
+        
+        function createOpponents() {
+            const colors = [0x0066ff, 0x00ff00, 0xffff00, 0xff00ff];
+            
+            colors.forEach((color, i) => {
+                const opponent = new THREE.Group();
+                
+                // Body
+                const bodyGeo = new THREE.BoxGeometry(1.5, 0.5, 2.5);
+                const bodyMat = new THREE.MeshStandardMaterial({ 
+                    color: color,
+                    metalness: 0.6,
+                    roughness: 0.4
+                });
+                const body = new THREE.Mesh(bodyGeo, bodyMat);
+                body.position.y = 0.4;
+                body.castShadow = true;
+                opponent.add(body);
+                
+                // Cockpit
+                const cockpitGeo = new THREE.BoxGeometry(1.2, 0.4, 1.2);
+                const cockpitMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+                const cockpit = new THREE.Mesh(cockpitGeo, cockpitMat);
+                cockpit.position.set(0, 0.7, -0.3);
+                opponent.add(cockpit);
+                
+                // Driver head
+                const headGeo = new THREE.SphereGeometry(0.25, 16, 16);
+                const headMat = new THREE.MeshStandardMaterial({ color: 0xffcc99 });
+                const head = new THREE.Mesh(headGeo, headMat);
+                head.position.set(0, 1.1, -0.3);
+                opponent.add(head);
+                
+                // Helmet
+                const helmetGeo = new THREE.SphereGeometry(0.28, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+                const helmetMat = new THREE.MeshStandardMaterial({ color: color });
+                const helmet = new THREE.Mesh(helmetGeo, helmetMat);
+                helmet.position.set(0, 1.15, -0.3);
+                opponent.add(helmet);
+                
+                // Wheels
+                const wheelGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16);
+                const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111111 });
+                
+                [[-0.8, 0.8], [0.8, 0.8], [-0.8, -0.8], [0.8, -0.8]].forEach(([x, z]) => {
+                    const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+                    wheel.rotation.z = Math.PI / 2;
+                    wheel.position.set(x, 0.3, z);
+                    opponent.add(wheel);
+                });
+                
+                // Position on track
+                const startT = 0.1 + i * 0.15;
+                const startPoint = trackPath.getPointAt(startT);
+                opponent.position.set(startPoint.x, 0.5, startPoint.z);
+                
+                // AI data
+                opponent.userData = {
+                    t: startT,
+                    speed: 40 + Math.random() * 20,
+                    targetSpeed: 60 + Math.random() * 20,
+                    lap: 1,
+                    finished: false
+                };
+                
+                scene.add(opponent);
+                opponents.push(opponent);
+            });
+        }
+        
+        function createEnvironment() {
+            // Trees
+            for (let i = 0; i < 100; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 80 + Math.random() * 150;
+                const x = Math.cos(angle) * dist;
+                const z = Math.sin(angle) * dist - 50;
+                
+                createTree(x, z);
+            }
+            
+            // Mushrooms (Mario Kart style)
+            for (let i = 0; i < 20; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 50 + Math.random() * 100;
+                const x = Math.cos(angle) * dist;
+                const z = Math.sin(angle) * dist - 50;
+                
+                createMushroom(x, z);
+            }
+            
+            // Item boxes on track
+            createItemBoxes();
+            
+            // Clouds
+            for (let i = 0; i < 30; i++) {
+                createCloud(
+                    (Math.random() - 0.5) * 400,
+                    60 + Math.random() * 40,
+                    (Math.random() - 0.5) * 400
+                );
+            }
+        }
+        
+        function createTree(x, z) {
+            const tree = new THREE.Group();
+            
+            // Trunk
+            const trunkGeo = new THREE.CylinderGeometry(0.5, 0.7, 4, 8);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 2;
+            trunk.castShadow = true;
+            tree.add(trunk);
+            
+            // Foliage
+            const foliageGeo = new THREE.SphereGeometry(3, 8, 8);
+            const foliageMat = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+            const foliage = new THREE.Mesh(foliageGeo, foliageMat);
+            foliage.position.y = 5;
+            foliage.castShadow = true;
+            tree.add(foliage);
+            
+            tree.position.set(x, 0, z);
+            scene.add(tree);
+        }
+        
+        function createMushroom(x, z) {
+            const mushroom = new THREE.Group();
+            
+            // Stem
+            const stemGeo = new THREE.CylinderGeometry(0.3, 0.4, 1, 8);
+            const stemMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+            const stem = new THREE.Mesh(stemGeo, stemMat);
+            stem.position.y = 0.5;
+            mushroom.add(stem);
+            
+            // Cap
+            const capGeo = new THREE.SphereGeometry(0.8, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+            const capMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+            const cap = new THREE.Mesh(capGeo, capMat);
+            cap.position.y = 1;
+            mushroom.add(cap);
+            
+            // White spots
+            for (let i = 0; i < 5; i++) {
+                const spotGeo = new THREE.SphereGeometry(0.15, 8, 8);
+                const spotMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+                const spot = new THREE.Mesh(spotGeo, spotMat);
+                const angle = Math.random() * Math.PI * 2;
+                const height = Math.random() * 0.3 + 0.1;
+                spot.position.set(
+                    Math.cos(angle) * 0.5,
+                    1.2 + height,
+                    Math.sin(angle) * 0.5
+                );
+                mushroom.add(spot);
+            }
+            
+            mushroom.position.set(x, 0, z);
+            mushroom.scale.setScalar(1 + Math.random() * 2);
+            scene.add(mushroom);
+        }
+        
+        function createItemBoxes() {
+            const itemBoxes = [];
+            const numBoxes = 8;
+            
+            for (let i = 0; i < numBoxes; i++) {
+                const t = (i + 0.5) / numBoxes;
+                const point = trackPath.getPointAt(t);
+                
+                const box = new THREE.Group();
+                
+                // Cube
+                const cubeGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+                const cubeMat = new THREE.MeshStandardMaterial({ 
+                    color: 0xffff00,
+                    transparent: true,
+                    opacity: 0.8,
+                    emissive: 0xffff00,
+                    emissiveIntensity: 0.3
+                });
+                const cube = new THREE.Mesh(cubeGeo, cubeMat);
+                box.add(cube);
+                
+                // Question mark (simplified)
+                const qGeo = new THREE.TorusGeometry(0.3, 0.1, 8, 16, Math.PI * 1.5);
+                const qMat = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+                const q = new THREE.Mesh(qGeo, qMat);
+                q.rotation.x = Math.PI / 2;
+                q.position.z = 0.76;
+                box.add(q);
+                
+                box.position.set(point.x, 2, point.z);
+                box.userData = { t: t, collected: false, respawnTime: 0 };
+                scene.add(box);
+                itemBoxes.push(box);
+            }
+            
+            // Animate boxes
+            function animateBoxes() {
+                itemBoxes.forEach(box => {
+                    if (!box.userData.collected) {
+                        box.rotation.y += 0.02;
+                        box.position.y = 2 + Math.sin(Date.now() * 0.003) * 0.3;
+                    }
+                });
+                requestAnimationFrame(animateBoxes);
+            }
+            animateBoxes();
+        }
+        
+        function createCloud(x, y, z) {
+            const cloud = new THREE.Group();
+            
+            const cloudMat = new THREE.MeshStandardMaterial({ 
+                color: 0xffffff,
+                transparent: true,
+                opacity: 0.9
+            });
+            
+            for (let i = 0; i < 5; i++) {
+                const puffGeo = new THREE.SphereGeometry(3 + Math.random() * 2, 8, 8);
+                const puff = new THREE.Mesh(puffGeo, cloudMat);
+                puff.position.set(
+                    (Math.random() - 0.5) * 8,
+                    (Math.random() - 0.5) * 2,
+                    (Math.random() - 0.5) * 4
+                );
+                cloud.add(puff);
+            }
+            
+            cloud.position.set(x, y, z);
+            scene.add(cloud);
+        }
+        
+        function setupEvents() {
+            // Keyboard
+            document.addEventListener('keydown', (e) => {
+                switch(e.code) {
+                    case 'ArrowUp':
+                    case 'KeyW':
+                        keys.up = true;
+                        break;
+                    case 'ArrowDown':
+                    case 'KeyS':
+                        keys.down = true;
+                        break;
+                    case 'ArrowLeft':
+                    case 'KeyA':
+                        keys.left = true;
+                        break;
+                    case 'ArrowRight':
+                    case 'KeyD':
+                        keys.right = true;
+                        break;
+                    case 'Space':
+                        keys.space = true;
+                        e.preventDefault();
+                        break;
+                    case 'KeyR':
+                        resetKart();
+                        break;
+                }
+            });
+            
+            document.addEventListener('keyup', (e) => {
+                switch(e.code) {
+                    case 'ArrowUp':
+                    case 'KeyW':
+                        keys.up = false;
+                        break;
+                    case 'ArrowDown':
+                    case 'KeyS':
+                        keys.down = false;
+                        break;
+                    case 'ArrowLeft':
+                    case 'KeyA':
+                        keys.left = false;
+                        break;
+                    case 'ArrowRight':
+                    case 'KeyD':
+                        keys.right = false;
+                        break;
+                    case 'Space':
+                        keys.space = false;
+                        break;
+                }
+            });
+            
+            // Start button
+            document.getElementById('start-btn').addEventListener('click', startGame);
+            
+            // Resize
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+        
+        function startGame() {
+            document.getElementById('start-screen').style.display = 'none';
+            gameStarted = true;
+            raceTime = 0;
+            currentLap = 1;
+            resetKart();
+            
+            // Countdown
+            let countdown = 3;
+            const countdownInterval = setInterval(() => {
+                if (countdown > 0) {
+                    showBoostText(countdown.toString());
+                    countdown--;
+                } else {
+                    showBoostText('GO!');
+                    clearInterval(countdownInterval);
+                }
+            }, 1000);
+        }
+        
+        function resetKart() {
+            physics.position.set(0, 0.5, 5);
+            physics.velocity.set(0, 0, 0);
+            physics.rotation = 0;
+            physics.angularVelocity = 0;
+            physics.speed = 0;
+            physics.drifting = false;
+            nitro = 100;
+            
+            checkpoints.forEach(cp => cp.passed = false);
+        }
+        
+        function showBoostText(text) {
+            const boostText = document.getElementById('boost-text');
+            boostText.textContent = text;
+            boostText.style.opacity = 1;
+            setTimeout(() => {
+                boostText.style.opacity = 0;
+            }, 500);
+        }
+        
+        function updatePhysics(delta) {
+            if (!gameStarted) return;
+            
+            const dt = Math.min(delta, 0.05); // Cap delta time
+            
+            // Input processing
+            let throttle = 0;
+            let brake = 0;
+            let steerInput = 0;
+            
+            if (keys.up) throttle = 1;
+            if (keys.down) brake = 1;
+            if (keys.left) steerInput = 1;
+            if (keys.right) steerInput = -1;
+            
+            // Nitro
+            isUsingNitro = keys.space && nitro > 0 && throttle > 0;
+            if (isUsingNitro) {
+                nitro -= PHYSICS.NITRO_CONSUMPTION * dt;
+                nitro = Math.max(0, nitro);
+            } else if (!keys.space) {
+                nitro += PHYSICS.NITRO_RECHARGE * dt;
+                nitro = Math.min(100, nitro);
+            }
+            
+            // Speed calculation
+            const maxSpeed = isUsingNitro ? PHYSICS.MAX_SPEED * PHYSICS.NITRO_BOOST : PHYSICS.MAX_SPEED;
+            const acceleration = isUsingNitro ? PHYSICS.ACCELERATION * PHYSICS.NITRO_BOOST : PHYSICS.ACCELERATION;
+            
+            // Acceleration/braking
+            if (throttle > 0) {
+                physics.speed += acceleration * dt * throttle;
+            }
+            if (brake > 0) {
+                if (physics.speed > 0) {
+                    physics.speed -= PHYSICS.BRAKE_FORCE * dt * brake;
+                } else {
+                    physics.speed -= PHYSICS.ACCELERATION * 0.5 * dt * brake; // Reverse
+                }
+            }
+            
+            // Apply drag and rolling resistance
+            physics.speed *= PHYSICS.DRAG;
+            physics.speed *= PHYSICS.ROLLING_RESISTANCE;
+            
+            // Clamp speed
+            physics.speed = Math.max(-maxSpeed * 0.3, Math.min(maxSpeed, physics.speed));
+            
+            // Steering (speed-dependent)
+            const speedRatio = Math.abs(physics.speed) / PHYSICS.MAX_SPEED;
+            const turnSpeed = PHYSICS.TURN_SPEED * (1 - speedRatio * PHYSICS.TURN_SPEED_FACTOR);
+            
+            // Drift detection
+            const wasDrifting = physics.drifting;
+            physics.drifting = speedRatio > PHYSICS.DRIFT_THRESHOLD && Math.abs(steerInput) > 0.5;
+            
+            if (physics.drifting && !wasDrifting) {
+                physics.driftAngle = steerInput * 0.3;
+            }
+            
+            // Apply steering
+            if (Math.abs(physics.speed) > 1) {
+                const steerFactor = physics.drifting ? PHYSICS.DRIFT_FACTOR : 1;
+                physics.angularVelocity = steerInput * turnSpeed * steerFactor * Math.sign(physics.speed);
+                
+                if (physics.drifting) {
+                    physics.driftAngle += steerInput * 0.02;
+                    physics.driftAngle *= 0.95;
+                }
+            } else {
+                physics.angularVelocity *= 0.8;
+                physics.driftAngle *= 0.9;
+            }
+            
+            // Apply angular velocity
+            physics.rotation += physics.angularVelocity * dt;
+            
+            // Calculate velocity from speed and rotation
+            const forwardDir = new THREE.Vector3(
+                Math.sin(physics.rotation + physics.driftAngle),
+                0,
+                Math.cos(physics.rotation + physics.driftAngle)
+            );
+            
+            // Convert km/h to units/s (assuming 1 unit = 1 meter)
+            const speedMs = physics.speed / 3.6;
+            
+            physics.velocity.x = forwardDir.x * speedMs;
+            physics.velocity.z = forwardDir.z * speedMs;
+            
+            // Apply velocity to position
+            physics.position.x += physics.velocity.x * dt;
+            physics.position.z += physics.velocity.z * dt;
+            
+            // Ground collision / track bounds
+            const trackPoint = getClosestTrackPoint(physics.position);
+            const distToTrack = physics.position.distanceTo(trackPoint);
+            
+            if (distToTrack > 12) {
+                // Off track - slow down
+                physics.speed *= 0.95;
+            }
+            
+            // Update kart visual
+            kart.position.copy(physics.position);
+            kart.rotation.y = physics.rotation;
+            
+            // Tilt kart during turns
+            const tiltAmount = physics.angularVelocity * 0.1;
+            kart.rotation.z = -tiltAmount;
+            
+            // Wheel rotation
+            const wheelRotSpeed = speedMs * 2;
+            wheels.forEach((wheel, i) => {
+                wheel.rotation.x += wheelRotSpeed * dt;
+                
+                // Front wheel steering
+                if (i < 2) {
+                    wheel.rotation.y = steerInput * 0.3;
+                }
+            });
+            
+            // Suspension bounce
+            const bounceAmount = Math.sin(Date.now() * 0.01) * 0.02 * Math.abs(physics.speed) / PHYSICS.MAX_SPEED;
+            kart.position.y = physics.position.y + bounceAmount;
+            
+            // Check checkpoints
+            checkCheckpoints();
+            
+            // Update race time
+            raceTime += dt;
+        }
+        
+        function getClosestTrackPoint(position) {
+            let closest = null;
+            let minDist = Infinity;
+            
+            for (let t = 0; t <= 1; t += 0.01) {
+                const point = trackPath.getPointAt(t);
+                const dist = position.distanceTo(point);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = point;
+                }
+            }
+            
+            return closest || position;
+        }
+        
+        function checkCheckpoints() {
+            checkpoints.forEach((cp, i) => {
+                if (!cp.passed) {
+                    const dist = physics.position.distanceTo(cp.position);
+                    if (dist < 15) {
+                        // Check if this is the next checkpoint
+                        if (i === 0 && lastCheckpoint === checkpoints.length - 1) {
+                            // Crossed finish line
+                            cp.passed = true;
+                            lastCheckpoint = 0;
+                            
+                            // New lap
+                            if (currentLap < 3) {
+                                currentLap++;
+                                showBoostText(`Volta ${currentLap}!`);
+                                checkpoints.forEach(c => c.passed = false);
+                            } else {
+                                // Race finished!
+                                finishRace();
+                            }
+                        } else if (i === lastCheckpoint + 1 || (i === 0 && lastCheckpoint === 0)) {
+                            cp.passed = true;
+                            lastCheckpoint = i;
+                        }
+                    }
+                }
+            });
+        }
+        
+        function finishRace() {
+            showBoostText('🏆 CHEGOU!');
+            
+            if (bestTime === null || raceTime < bestTime) {
+                bestTime = raceTime;
+                document.getElementById('best-time').textContent = formatTime(bestTime);
+            }
+            
+            setTimeout(() => {
+                if (confirm(`Tempo: ${formatTime(raceTime)}\n\nJogar novamente?`)) {
+                    currentLap = 1;
+                    raceTime = 0;
+                    resetKart();
+                    checkpoints.forEach(cp => cp.passed = false);
+                    lastCheckpoint = 0;
+                }
+            }, 2000);
+        }
+        
+        function updateOpponents(delta) {
+            opponents.forEach((opp, index) => {
+                const data = opp.userData;
+                
+                // Simple AI - follow track
+                data.t += (data.speed / 3.6) * delta * 0.003;
+                if (data.t >= 1) {
+                    data.t -= 1;
+                    data.lap++;
+                }
+                
+                // Vary speed
+                data.speed += (Math.random() - 0.5) * 10 * delta;
+                data.speed = Math.max(40, Math.min(80, data.speed));
+                
+                // Position on track
+                const point = trackPath.getPointAt(data.t);
+                const nextPoint = trackPath.getPointAt((data.t + 0.01) % 1);
+                
+                // Add some lateral offset
+                const offset = Math.sin(data.t * 10 + index) * 3;
+                const tangent = new THREE.Vector3().subVectors(nextPoint, point).normalize();
+                const normal = new THREE.Vector3(-tangent.z, 0, tangent.x);
+                
+                opp.position.x = point.x + normal.x * offset;
+                opp.position.z = point.z + normal.z * offset;
+                opp.position.y = 0.5;
+                
+                // Face direction
+                opp.lookAt(nextPoint.x + normal.x * offset, 0.5, nextPoint.z + normal.z * offset);
+            });
+        }
+        
+        function updateCamera() {
+            // Chase camera
+            const cameraOffset = new THREE.Vector3(0, 4, -8);
+            const rotatedOffset = cameraOffset.clone().applyAxisAngle(
+                new THREE.Vector3(0, 1, 0),
+                physics.rotation
+            );
+            
+            const targetPos = physics.position.clone().add(rotatedOffset);
+            camera.position.lerp(targetPos, 0.1);
+            
+            // Look ahead of kart
+            const lookAtOffset = new THREE.Vector3(0, 1, 5).applyAxisAngle(
+                new THREE.Vector3(0, 1, 0),
+                physics.rotation
+            );
+            const lookAtTarget = physics.position.clone().add(lookAtOffset);
+            
+            const currentLookAt = new THREE.Vector3();
+            camera.getWorldDirection(currentLookAt);
+            camera.lookAt(lookAtTarget);
+        }
+        
+        function updateHUD() {
+            // Speed
+            const displaySpeed = Math.abs(Math.round(physics.speed));
+            document.getElementById('speed-value').textContent = displaySpeed;
+            
+            // Time
+            document.getElementById('time').textContent = formatTime(raceTime);
+            
+            // Lap
+            document.getElementById('lap').textContent = currentLap;
+            
+            // Nitro bar
+            document.getElementById('nitro-fill').style.height = nitro + '%';
+            
+            // Position
+            const positions = calculatePositions();
+            const playerPos = positions.indexOf('player') + 1;
+            document.getElementById('position-display').textContent = playerPos + 'º';
+            
+            // Update minimap
+            updateMinimap();
+        }
+        
+        function calculatePositions() {
+            const racers = [];
+            
+            // Player progress
+            let playerProgress = lastCheckpoint / checkpoints.length + (currentLap - 1);
+            racers.push({ id: 'player', progress: playerProgress });
+            
+            // Opponents progress
+            opponents.forEach((opp, i) => {
+                racers.push({ id: `opp${i}`, progress: opp.userData.t + (opp.userData.lap - 1) });
+            });
+            
+            racers.sort((a, b) => b.progress - a.progress);
+            return racers.map(r => r.id);
+        }
+        
+        function updateMinimap() {
+            const canvas = document.getElementById('minimap');
+            const ctx = canvas.getContext('2d');
+            canvas.width = 180;
+            canvas.height = 180;
+            
+            ctx.clearRect(0, 0, 180, 180);
+            
+            // Draw track
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 8;
+            ctx.beginPath();
+            
+            for (let t = 0; t <= 1; t += 0.02) {
+                const point = trackPath.getPointAt(t);
+                const x = 90 + point.x * 0.8;
+                const y = 90 - point.z * 0.8;
+                
+                if (t === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+            
+            // Draw player
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.arc(
+                90 + physics.position.x * 0.8,
+                90 - physics.position.z * 0.8,
+                6, 0, Math.PI * 2
+            );
+            ctx.fill();
+            
+            // Draw opponents
+            const oppColors = ['#0066ff', '#00ff00', '#ffff00', '#ff00ff'];
+            opponents.forEach((opp, i) => {
+                ctx.fillStyle = oppColors[i];
+                ctx.beginPath();
+                ctx.arc(
+                    90 + opp.position.x * 0.8,
+                    90 - opp.position.z * 0.8,
+                    4, 0, Math.PI * 2
+                );
+                ctx.fill();
+            });
+        }
+        
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            const ms = Math.floor((seconds % 1) * 100);
+            return `${mins}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+        }
+        
+        let lastTime = 0;
+        
+        function animate(currentTime = 0) {
+            requestAnimationFrame(animate);
+            
+            const delta = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+            
+            if (gameStarted) {
+                updatePhysics(delta);
+                updateOpponents(delta);
+                updateCamera();
+                updateHUD();
+            } else {
+                // Attract mode camera
+                camera.position.set(
+                    Math.cos(currentTime * 0.0003) * 50,
+                    30,
+                    Math.sin(currentTime * 0.0003) * 50 - 50
+                );
+                camera.lookAt(0, 0, -50);
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Start!
+        init();
+    </script>
+</body>
+</html>
