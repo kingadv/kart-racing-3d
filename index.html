@@ -242,7 +242,7 @@
         
         // Physics variables
         const physics = {
-            position: new THREE.Vector3(0, 0.5, 0),
+            position: new THREE.Vector3(0, 0.25, 0),
             velocity: new THREE.Vector3(0, 0, 0),
             rotation: 0,
             angularVelocity: 0,
@@ -257,11 +257,11 @@
         
         // Physics constants (realistic values)
         const PHYSICS = {
-            MAX_SPEED: 180,           // km/h
-            ACCELERATION: 45,         // km/h per second
-            BRAKE_FORCE: 80,          // km/h per second
-            DRAG: 0.98,               // Air resistance
-            ROLLING_RESISTANCE: 0.995,
+            MAX_SPEED: 220,           // km/h
+            ACCELERATION: 85,         // km/h per second (mais rápido!)
+            BRAKE_FORCE: 100,         // km/h per second
+            DRAG: 0.985,              // Air resistance
+            ROLLING_RESISTANCE: 0.998,
             TURN_SPEED: 2.5,          // Radians per second at low speed
             TURN_SPEED_FACTOR: 0.4,   // How much speed affects turning
             DRIFT_THRESHOLD: 0.7,     // Speed ratio to start drifting
@@ -743,7 +743,7 @@
                 // Position on track
                 const startT = 0.1 + i * 0.15;
                 const startPoint = trackPath.getPointAt(startT);
-                opponent.position.set(startPoint.x, 0.5, startPoint.z);
+                opponent.position.set(startPoint.x, 0.25, startPoint.z);
                 
                 // AI data
                 opponent.userData = {
@@ -1012,7 +1012,7 @@
         }
         
         function resetKart() {
-            physics.position.set(0, 0.5, 5);
+            physics.position.set(0, 0.25, 5);
             physics.velocity.set(0, 0, 0);
             physics.rotation = 0;
             physics.angularVelocity = 0;
@@ -1154,9 +1154,9 @@
                 }
             });
             
-            // Suspension bounce
-            const bounceAmount = Math.sin(Date.now() * 0.01) * 0.02 * Math.abs(physics.speed) / PHYSICS.MAX_SPEED;
-            kart.position.y = physics.position.y + bounceAmount;
+            // Suspension bounce (minimal)
+            const bounceAmount = Math.sin(Date.now() * 0.015) * 0.008 * Math.abs(physics.speed) / PHYSICS.MAX_SPEED;
+            kart.position.y = 0.25 + bounceAmount;
             
             // Check checkpoints
             checkCheckpoints();
@@ -1255,10 +1255,10 @@
                 
                 opp.position.x = point.x + normal.x * offset;
                 opp.position.z = point.z + normal.z * offset;
-                opp.position.y = 0.5;
+                opp.position.y = 0.25;
                 
                 // Face direction
-                opp.lookAt(nextPoint.x + normal.x * offset, 0.5, nextPoint.z + normal.z * offset);
+                opp.lookAt(nextPoint.x + normal.x * offset, 0.25, nextPoint.z + normal.z * offset);
             });
         }
         
