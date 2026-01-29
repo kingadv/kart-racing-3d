@@ -255,13 +255,13 @@
             suspensionCompression: [0, 0, 0, 0]
         };
         
-        // Physics constants (SUPER VELOCIDADE!)
+        // Physics constants (INSANO 5000!)
         const PHYSICS = {
-            MAX_SPEED: 450,           // km/h TURBO!
-            ACCELERATION: 200,        // km/h per second INSTANTÂNEO!
-            BRAKE_FORCE: 180,         // km/h per second
-            DRAG: 0.995,              // Menos arrasto
-            ROLLING_RESISTANCE: 0.999,
+            MAX_SPEED: 5000,          // km/h ABSURDO!
+            ACCELERATION: 800,        // km/h per second FOGUETE!
+            BRAKE_FORCE: 500,         // km/h per second
+            DRAG: 0.998,              // Quase sem arrasto
+            ROLLING_RESISTANCE: 0.9995,
             TURN_SPEED: 2.5,          // Radians per second at low speed
             TURN_SPEED_FACTOR: 0.4,   // How much speed affects turning
             DRIFT_THRESHOLD: 0.7,     // Speed ratio to start drifting
@@ -271,9 +271,9 @@
             SUSPENSION_STIFFNESS: 50,
             SUSPENSION_DAMPING: 5,
             MASS: 150,                // kg
-            NITRO_BOOST: 1.8,
-            NITRO_CONSUMPTION: 20,    // per second
-            NITRO_RECHARGE: 25        // per second (recarrega rápido!)
+            NITRO_BOOST: 2.0,
+            NITRO_CONSUMPTION: 15,    // per second
+            NITRO_RECHARGE: 40        // per second (recarrega instantâneo!)
         };
         
         // Track checkpoints for lap counting
@@ -748,8 +748,8 @@
                 // AI data
                 opponent.userData = {
                     t: startT,
-                    speed: 120 + Math.random() * 80,
-                    targetSpeed: 180 + Math.random() * 100,
+                    speed: 800 + Math.random() * 500,
+                    targetSpeed: 1500 + Math.random() * 1000,
                     lap: 1,
                     finished: false
                 };
@@ -1240,9 +1240,9 @@
                     data.lap++;
                 }
                 
-                // Vary speed (TURBO!)
-                data.speed += (Math.random() - 0.5) * 30 * delta;
-                data.speed = Math.max(150, Math.min(280, data.speed));
+                // Vary speed (INSANO!)
+                data.speed += (Math.random() - 0.5) * 200 * delta;
+                data.speed = Math.max(800, Math.min(2500, data.speed));
                 
                 // Position on track
                 const point = trackPath.getPointAt(data.t);
